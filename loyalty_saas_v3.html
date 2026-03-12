@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LoyaltyOS Enterprise</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root{
+  --prussian:#1B3A6B;--prussian-light:#2A5298;--prussian-dark:#0f2347;
+  --gold:#C9A227;--gold-light:#F0C040;--gold-dim:#7a6118;
+  --bg:#060d1a;--bg2:#0b1628;--bg3:#111f38;
+  --surface:#0e1c35;--surface2:#162845;
+  --border:rgba(201,162,39,0.18);--border2:rgba(42,82,152,0.35);
+  --text:#e8eef8;--text2:#8fa3c8;--text3:#4d6a9a;
+  --green:#16a34a;--green-dim:#052e16;
+  --r:0.75rem;--r2:1.25rem;
+  --glow:0 0 30px rgba(201,162,39,0.12);
+  --transition:all 0.25s cubic-bezier(.4,0,.2,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Cairo',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden}
+[dir="ltr"] body{font-family:system-ui,sans-serif}
+
+/* LAYOUT */
+.app{display:grid;grid-template-columns:240px 1fr;grid-template-rows:64px 1fr;min-height:100vh}
+
+/* TOPBAR */
+.topbar{grid-column:1/-1;display:flex;align-items:center;justify-content:space-between;padding:0 1.5rem;background:var(--bg2);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.logo{display:flex;align-items:center;gap:0.75rem}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--prussian-light),var(--gold));border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;font-weight:900;color:#fff;box-shadow:0 0 20px rgba(201,162,39,0.3)}
+.logo-text{font-size:1.1rem;font-weight:700;color:var(--text)}
+.logo-text span{color:var(--gold)}
+.topbar-actions{display:flex;align-items:center;gap:0.75rem}
+.status-pill{display:flex;align-items:center;gap:0.5rem;background:var(--green-dim);border:1px solid var(--green);color:#4ade80;padding:0.3rem 0.85rem;border-radius:999px;font-size:0.75rem;font-weight:600;white-space:nowrap}
+.status-dot{width:7px;height:7px;background:#4ade80;border-radius:50%;animation:pulse2 2s infinite;flex-shrink:0}
+@keyframes pulse2{0%,100%{opacity:1;box-shadow:0 0 0 0 #4ade8066}50%{opacity:.7;box-shadow:0 0 0 5px transparent}}
+.avatar{width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg,var(--prussian),var(--gold));display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.85rem;cursor:pointer;flex-shrink:0}
+.notif-btn{width:36px;height:36px;border-radius:var(--r);background:var(--surface);border:1px solid var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:1rem;position:relative;flex-shrink:0}
+.notif-badge{position:absolute;top:-4px;right:-4px;width:16px;height:16px;background:var(--gold);border-radius:50%;font-size:0.6rem;font-weight:700;display:flex;align-items:center;justify-content:center;color:#000}
+.search-bar{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:0.5rem 0.875rem;display:flex;align-items:center;gap:0.5rem;font-size:0.82rem;color:var(--text3);width:190px}
+.search-bar input{background:none;border:none;outline:none;color:var(--text);font-family:inherit;font-size:0.82rem;width:100%}
+.lang-switcher{display:flex;align-items:center;gap:0.2rem;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:0.2rem}
+.lang-btn{padding:0.25rem 0.55rem;border-radius:5px;font-size:0.7rem;font-weight:700;cursor:pointer;border:none;background:transparent;color:var(--text2);transition:var(--transition)}
+.lang-btn.active{background:var(--prussian-light);color:#fff}
+.lang-btn:hover:not(.active){color:var(--text)}
+
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-inline-end:1px solid var(--border);padding:1rem 0;overflow-y:auto;position:sticky;top:64px;height:calc(100vh - 64px)}
+.nav-section{margin-bottom:1.5rem}
+.nav-label{font-size:0.65rem;font-weight:700;letter-spacing:0.12em;color:var(--text3);text-transform:uppercase;padding:0 1.25rem;margin-bottom:0.5rem}
+.nav-item{display:flex;align-items:center;gap:0.75rem;padding:0.65rem 1.25rem;cursor:pointer;transition:var(--transition);border-inline-end:3px solid transparent;font-size:0.875rem;color:var(--text2)}
+.nav-item:hover{background:var(--surface);color:var(--text)}
+.nav-item.active{background:rgba(201,162,39,0.08);border-inline-end-color:var(--gold);color:var(--gold)}
+.nav-item .icon{font-size:1rem;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{margin-inline-start:auto;background:var(--prussian-light);color:var(--gold-light);padding:0.1rem 0.5rem;border-radius:999px;font-size:0.65rem;font-weight:700}
+
+/* MAIN */
+.main{padding:1.75rem;overflow-y:auto;background:var(--bg)}
+.page-header{margin-bottom:1.75rem}
+.page-title{font-size:1.5rem;font-weight:700;color:var(--text);margin-bottom:0.25rem}
+.page-subtitle{font-size:0.85rem;color:var(--text2)}
+.page-header-row{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.stat-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r2);padding:1.25rem;position:relative;overflow:hidden;transition:var(--transition);cursor:pointer}
+.stat-card:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:var(--glow)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:linear-gradient(90deg,var(--prussian-light),var(--gold))}
+.stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:0.875rem}
+.stat-value{font-size:1.75rem;font-weight:700;color:var(--text);line-height:1}
+.stat-label{font-size:0.8rem;color:var(--text2);margin-top:0.3rem}
+.stat-change{display:inline-flex;align-items:center;gap:0.3rem;font-size:0.75rem;font-weight:600;margin-top:0.5rem;color:#4ade80}
+
+/* SECTION TITLE */
+.section-title{font-size:1rem;font-weight:700;color:var(--text);margin-bottom:1rem;display:flex;align-items:center;gap:0.5rem}
+.section-title::after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--border2),transparent)}
+
+/* ══════════════════════════════════════════════
+   CHARTS — THE DEFINITIVE FIX
+   chart-wrap has fixed pixel height + overflow:hidden
+   canvas fills 100% of it via absolute positioning
+   Chart.js respects the wrapper, never expands it
+   ══════════════════════════════════════════════ */
+.charts-row{display:grid;grid-template-columns:2fr 1fr;gap:1rem;margin-bottom:1.5rem}
+.chart-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r2);padding:1.25rem;overflow:hidden;min-width:0}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:0.875rem}
+.chart-title{font-size:0.875rem;font-weight:600;color:var(--text)}
+.chart-meta{font-size:0.75rem;color:var(--text3)}
+.chart-wrap{position:relative;height:195px;width:100%;overflow:hidden;flex-shrink:0}
+.chart-wrap canvas{position:absolute!important;top:0!important;left:0!important;width:100%!important;height:100%!important}
+
+/* TABLES */
+.table-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r2);overflow:hidden;margin-bottom:1.5rem}
+.table-head{display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:1px solid var(--border2)}
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{text-align:start;padding:0.75rem 1rem;font-size:0.7rem;font-weight:700;letter-spacing:0.08em;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border2);background:var(--bg3)}
+tbody tr{transition:var(--transition);cursor:pointer}
+tbody tr:hover{background:rgba(42,82,152,0.12)}
+tbody td{padding:0.875rem 1rem;font-size:0.82rem;color:var(--text2);border-bottom:1px solid rgba(42,82,152,0.12)}
+tbody td:first-child{color:var(--text);font-weight:600}
+
+/* TIERS */
+.tier{display:inline-flex;align-items:center;gap:0.35rem;padding:0.2rem 0.65rem;border-radius:999px;font-size:0.7rem;font-weight:700}
+.tier-bronze{background:rgba(180,83,9,.2);color:#fb923c;border:1px solid rgba(180,83,9,.4)}
+.tier-silver{background:rgba(100,116,139,.2);color:#94a3b8;border:1px solid rgba(100,116,139,.4)}
+.tier-gold{background:rgba(201,162,39,.15);color:var(--gold-light);border:1px solid rgba(201,162,39,.35)}
+.tier-platinum{background:rgba(139,92,246,.15);color:#c4b5fd;border:1px solid rgba(139,92,246,.4)}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;padding:0.2rem 0.65rem;border-radius:999px;font-size:0.7rem;font-weight:600}
+.badge-green{background:rgba(22,163,74,.15);color:#4ade80;border:1px solid rgba(22,163,74,.3)}
+.badge-yellow{background:rgba(201,162,39,.15);color:var(--gold);border:1px solid rgba(201,162,39,.3)}
+.badge-blue{background:rgba(8,145,178,.15);color:#67e8f9;border:1px solid rgba(8,145,178,.3)}
+
+/* TIER PROGRESS */
+.tier-progress{display:flex;flex-direction:column;gap:0.6rem;margin-top:0.875rem}
+.tier-row{display:flex;align-items:center;gap:0.75rem}
+.tier-name-col{width:58px;font-size:0.75rem;font-weight:700;flex-shrink:0}
+.tier-bar-wrap{flex:1;height:7px;background:var(--bg);border-radius:999px;overflow:hidden}
+.tier-bar{height:100%;border-radius:999px;transition:width 1.5s cubic-bezier(.4,0,.2,1)}
+.tier-count{font-size:0.75rem;font-weight:700;font-family:'JetBrains Mono',monospace;width:42px;text-align:end;flex-shrink:0}
+.bar-bronze{background:linear-gradient(90deg,#92400e,#fb923c)}
+.bar-silver{background:linear-gradient(90deg,#475569,#94a3b8)}
+.bar-gold{background:linear-gradient(90deg,var(--gold-dim),var(--gold-light))}
+.bar-platinum{background:linear-gradient(90deg,#4c1d95,#c4b5fd)}
+
+/* PIPELINE */
+.pipeline-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1rem;margin-bottom:1.5rem}
+.pipeline-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r2);padding:1.25rem;transition:var(--transition)}
+.pipeline-card:hover{border-color:var(--gold)}
+.pipeline-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:0.875rem}
+.pipeline-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.pipeline-title{font-size:0.875rem;font-weight:700;color:var(--text)}
+.pipeline-sub{font-size:0.7rem;color:var(--text3);margin-top:0.1rem}
+.pipeline-steps{display:flex;align-items:center;gap:0.35rem;flex-wrap:wrap;margin-top:0.6rem}
+.step-node{background:var(--bg3);border:1px solid var(--border2);padding:0.22rem 0.55rem;border-radius:5px;font-size:0.67rem;font-weight:600;color:var(--text2);font-family:'JetBrains Mono',monospace}
+.step-arrow{color:var(--gold);font-size:0.72rem;font-weight:700}
+.pipeline-stats{display:flex;gap:1rem;margin-top:0.875rem;padding-top:0.75rem;border-top:1px solid var(--border2)}
+.p-stat{font-size:0.73rem;color:var(--text3)}
+.p-stat span{color:var(--gold);font-weight:700}
+
+/* AI PANEL */
+.ai-panel{background:linear-gradient(135deg,var(--surface) 0%,rgba(124,58,237,.08) 100%);border:1px solid rgba(124,58,237,.3);border-radius:var(--r2);padding:1.25rem;margin-bottom:1.5rem}
+.ai-header{display:flex;align-items:center;gap:0.75rem;margin-bottom:1rem}
+.ai-logo{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#7c3aed,#4f46e5);display:flex;align-items:center;justify-content:center;font-size:1.3rem;box-shadow:0 0 20px rgba(124,58,237,.4);flex-shrink:0}
+.ai-title{font-size:1rem;font-weight:700;color:var(--text)}
+.ai-sub{font-size:0.75rem;color:var(--text3)}
+.ai-recs{display:grid;grid-template-columns:repeat(3,1fr);gap:0.875rem}
+.ai-rec{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r);padding:1rem}
+.rec-customer{font-size:0.8rem;font-weight:700;color:var(--text);margin-bottom:0.25rem}
+.rec-tier-row{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.75rem}
+.rec-product{background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:6px;padding:0.5rem 0.65rem;font-size:0.75rem;color:var(--text2);margin-bottom:0.5rem}
+.rec-product strong{color:var(--gold);display:block;margin-bottom:0.1rem}
+.rec-discount{font-family:'JetBrains Mono',monospace;font-size:1.1rem;font-weight:700;color:#4ade80}
+.rec-reason{font-size:0.7rem;color:var(--text3);margin-top:0.35rem;line-height:1.4}
+
+/* LEADERBOARD */
+.leaderboard{display:flex;flex-direction:column;gap:0.45rem}
+.lb-item{display:flex;align-items:center;gap:0.75rem;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);padding:0.65rem 0.875rem;transition:var(--transition)}
+.lb-item:hover{border-color:var(--gold)}
+.lb-rank{width:26px;text-align:center;font-size:0.95rem;flex-shrink:0}
+.lb-rank.other{font-family:'JetBrains Mono',monospace;font-size:0.7rem;color:var(--text3)}
+.lb-avatar{width:30px;height:30px;border-radius:50%;background:linear-gradient(135deg,var(--prussian),var(--gold));display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700;flex-shrink:0}
+.lb-name{font-size:0.8rem;font-weight:700;color:var(--text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-pts{font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--gold);font-weight:700;margin-inline-start:auto;white-space:nowrap;flex-shrink:0}
+.lb-bar-wrap{width:50px;height:4px;background:var(--bg);border-radius:999px;overflow:hidden;flex-shrink:0}
+.lb-bar{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--prussian-light),var(--gold))}
+
+/* ACTIVITY */
+.activity-feed{display:flex;flex-direction:column}
+.activity-item{display:flex;align-items:flex-start;gap:0.65rem;padding:0.5rem 0}
+.activity-dot{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:0.82rem;flex-shrink:0}
+.activity-body{flex:1;min-width:0}
+.activity-text{font-size:0.78rem;color:var(--text2);line-height:1.4}
+.activity-text strong{color:var(--text)}
+.activity-time{font-size:0.67rem;color:var(--text3);margin-top:0.2rem}
+.activity-line{height:1px;background:var(--border2);margin:0 0 0 14px}
+
+/* MINI METRICS */
+.mini-metrics{display:flex;flex-direction:column;gap:0.5rem}
+.mini-metric{display:flex;align-items:center;justify-content:space-between;padding:0.55rem;background:var(--bg3);border-radius:var(--r)}
+.mm-label{font-size:0.77rem;color:var(--text2)}
+.mm-val{font-family:'JetBrains Mono',monospace;font-size:0.85rem;font-weight:700;color:var(--gold)}
+
+/* INTEGRATIONS */
+.integrations-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.875rem;margin-bottom:1.5rem}
+.integration-card{background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);padding:0.875rem;display:flex;flex-direction:column;align-items:center;gap:0.4rem;transition:var(--transition)}
+.integration-card:hover{border-color:var(--gold)}
+.int-icon{font-size:1.6rem}
+.int-name{font-size:0.77rem;font-weight:700;color:var(--text);text-align:center}
+.int-detail{font-size:0.67rem;color:var(--text3);text-align:center;line-height:1.5}
+
+/* BOTTOM ROW */
+.bottom-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1rem;margin-bottom:1.5rem}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:0.5rem;padding:0.55rem 1.1rem;border-radius:var(--r);font-family:inherit;font-size:0.8rem;font-weight:600;cursor:pointer;transition:var(--transition);border:none}
+.btn-primary{background:linear-gradient(135deg,var(--prussian-light),var(--prussian));color:#fff;border:1px solid rgba(201,162,39,.3)}
+.btn-primary:hover{box-shadow:0 0 20px rgba(201,162,39,.2)}
+.btn-gold{background:linear-gradient(135deg,var(--gold),var(--gold-dim));color:#000;font-weight:700}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border2)}
+.btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.75rem}
+
+/* TOAST */
+.toast{position:fixed;bottom:1.5rem;left:1.5rem;background:var(--surface2);border:1px solid var(--gold);border-radius:var(--r);padding:0.875rem 1.1rem;display:flex;align-items:center;gap:0.75rem;max-width:320px;z-index:9999;animation:slideUp 0.4s ease;box-shadow:0 8px 32px rgba(0,0,0,.5)}
+@keyframes slideUp{from{transform:translateY(20px);opacity:0}to{transform:translateY(0);opacity:1}}
+.toast-icon{font-size:1.2rem;flex-shrink:0}
+.toast-text{font-size:0.82rem;color:var(--text)}
+.toast-text strong{color:var(--gold);display:block}
+
+/* COUNTER */
+.counter{display:inline-block}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--prussian-light);border-radius:99px}
+
+/* BG GLOWS */
+.bg-glow{position:fixed;width:500px;height:500px;border-radius:50%;filter:blur(120px);pointer-events:none;z-index:0;opacity:0.04}
+.bg-glow-1{background:var(--prussian-light);top:-100px;right:-100px}
+.bg-glow-2{background:var(--gold);bottom:-100px;left:-100px}
+
+/* RESPONSIVE */
+@media(max-width:1200px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .charts-row{grid-template-columns:1fr}
+  .ai-recs{grid-template-columns:1fr 1fr}
+  .integrations-grid{grid-template-columns:repeat(2,1fr)}
+}
+@media(max-width:900px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .bottom-row{grid-template-columns:1fr}
+  .pipeline-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+<div class="app">
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="logo">
+    <div class="logo-icon">L</div>
+    <div>
+      <div class="logo-text">Loyalty<span>OS</span></div>
+      <div style="font-size:.65rem;color:var(--text3)">Enterprise v2.0.0</div>
+    </div>
+  </div>
+  <div class="topbar-actions">
+    <div class="status-pill"><div class="status-dot"></div><span data-i18n="allSystems">All Systems Operational</span></div>
+    <div class="search-bar"><span>🔍</span><input type="text" data-i18n-ph="searchPh" placeholder="Quick search..."/></div>
+    <div class="lang-switcher">
+      <button class="lang-btn active" onclick="setLang('en')">EN</button>
+      <button class="lang-btn" onclick="setLang('ar')">AR</button>
+      <button class="lang-btn" onclick="setLang('sv')">SV</button>
+    </div>
+    <div class="notif-btn">🔔<div class="notif-badge">5</div></div>
+    <div class="avatar" data-i18n="avatarLetter">F</div>
+  </div>
+</header>
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="nav-section">
+    <div class="nav-label" data-i18n="secMain">MAIN</div>
+    <div class="nav-item active" onclick="showPage('dashboard',this)"><span class="icon">📊</span><span data-i18n="navDashboard">Dashboard</span></div>
+    <div class="nav-item" onclick="showPage('customers',this)"><span class="icon">👥</span><span data-i18n="navCustomers">Customers</span><span class="nav-badge">12.4k</span></div>
+    <div class="nav-item" onclick="showPage('analytics',this)"><span class="icon">📈</span><span data-i18n="navAnalytics">Analytics</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label" data-i18n="secAutomation">AUTOMATION</div>
+    <div class="nav-item" onclick="showPage('workflows',this)"><span class="icon">⚡</span><span data-i18n="navWorkflows">Workflows</span><span class="nav-badge">9</span></div>
+    <div class="nav-item" onclick="showPage('ai',this)"><span class="icon">🤖</span><span data-i18n="navAI">AI Engine</span></div>
+    <div class="nav-item" onclick="showPage('campaigns',this)"><span class="icon">📣</span><span data-i18n="navCampaigns">Campaigns</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label" data-i18n="secLoyalty">LOYALTY PROGRAM</div>
+    <div class="nav-item" onclick="showPage('points',this)"><span class="icon">⭐</span><span data-i18n="navPoints">Points & Levels</span></div>
+    <div class="nav-item" onclick="showPage('referrals',this)"><span class="icon">🔗</span><span data-i18n="navReferrals">Referrals</span></div>
+    <div class="nav-item" onclick="showPage('gamification',this)"><span class="icon">🏆</span><span>Gamification</span></div>
+  </div>
+  <div class="nav-section">
+    <div class="nav-label" data-i18n="secSystem">SYSTEM</div>
+    <div class="nav-item" onclick="showPage('billing',this)"><span class="icon">💳</span><span>Stripe Billing</span></div>
+    <div class="nav-item" onclick="showPage('erp',this)"><span class="icon">🏢</span><span>ERPNext</span></div>
+    <div class="nav-item" onclick="showPage('warehouse',this)"><span class="icon">🗄️</span><span data-i18n="navWarehouse">Data Store</span></div>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+  <div class="page-header-row">
+    <div class="page-header">
+      <div class="page-title" data-i18n="pageTitle">👑 Main Dashboard</div>
+      <div class="page-subtitle" data-i18n="pageSubtitle">Welcome Farouq — Last updated: 2 min ago • Tuesday March 12, 2026</div>
+    </div>
+    <div style="display:flex;gap:.75rem">
+      <button class="btn btn-ghost btn-sm" onclick="exportData()" data-i18n="btnExport">⬇ Export</button>
+      <button class="btn btn-gold btn-sm" onclick="launchCampaign()" data-i18n="btnCampaign">▶ Launch Campaign</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(27,58,107,.3)">👥</div>
+      <div class="stat-value counter" data-target="12847">0</div>
+      <div class="stat-label" data-i18n="statCustomers">Total Customers</div>
+      <div class="stat-change" data-i18n="statCustomersD">↑ 18.4% vs last month</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(201,162,39,.15)">⭐</div>
+      <div class="stat-value counter" data-target="3420000" data-format="M">0</div>
+      <div class="stat-label" data-i18n="statPoints">Total Points Issued</div>
+      <div class="stat-change" data-i18n="statPointsD">↑ 23.1% points earn rate</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(22,163,74,.15)">💰</div>
+      <div class="stat-value">$<span class="counter" data-target="284700">0</span></div>
+      <div class="stat-label" data-i18n="statRevenue">Revenue (Last 30 Days)</div>
+      <div class="stat-change" data-i18n="statRevenueD">↑ 34.7% from Stripe</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background:rgba(124,58,237,.15)">🔗</div>
+      <div class="stat-value counter" data-target="1847">0</div>
+      <div class="stat-label" data-i18n="statReferrals">Successful Referrals</div>
+      <div class="stat-change" data-i18n="statReferralsD">↑ 41.2% conversion rate</div>
+    </div>
+  </div>
+
+  <!-- CHARTS -->
+  <div class="charts-row">
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title" data-i18n="chartGrowthTitle">📈 Monthly Growth — Customers & Revenue</div>
+        <div style="display:flex;gap:.5rem;align-items:center">
+          <span class="badge badge-blue">2026</span>
+          <span class="chart-meta" data-i18n="chartGrowthMeta">Last 12 months</span>
+        </div>
+      </div>
+      <div class="chart-wrap"><canvas id="growthChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-header">
+        <div class="chart-title" data-i18n="chartTierTitle">🥧 Tier Distribution</div>
+      </div>
+      <div class="chart-wrap"><canvas id="tierChart"></canvas></div>
+      <div class="tier-progress">
+        <div class="tier-row"><div class="tier-name-col" style="color:#fb923c">Bronze</div><div class="tier-bar-wrap"><div class="tier-bar bar-bronze" style="width:62%"></div></div><div class="tier-count" style="color:#fb923c">7,965</div></div>
+        <div class="tier-row"><div class="tier-name-col" style="color:#94a3b8">Silver</div><div class="tier-bar-wrap"><div class="tier-bar bar-silver" style="width:23%"></div></div><div class="tier-count" style="color:#94a3b8">2,955</div></div>
+        <div class="tier-row"><div class="tier-name-col" style="color:var(--gold-light)">Gold</div><div class="tier-bar-wrap"><div class="tier-bar bar-gold" style="width:11%"></div></div><div class="tier-count" style="color:var(--gold-light)">1,413</div></div>
+        <div class="tier-row"><div class="tier-name-col" style="color:#c4b5fd">Platina</div><div class="tier-bar-wrap"><div class="tier-bar bar-platinum" style="width:4%"></div></div><div class="tier-count" style="color:#c4b5fd">514</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INTEGRATIONS -->
+  <div class="section-title" data-i18n="secIntegrations">🔌 Integration Status</div>
+  <div class="integrations-grid">
+    <div class="integration-card"><div class="int-icon">💬</div><div class="int-name">WhatsApp API</div><div class="badge badge-green" data-i18n="statusActive">● Active</div><div class="int-detail">Graph API v18.0<br><span data-i18n="intWA">847 messages today</span></div></div>
+    <div class="integration-card"><div class="int-icon">📧</div><div class="int-name">SendGrid</div><div class="badge badge-green" data-i18n="statusActive">● Active</div><div class="int-detail">v3 API<br><span data-i18n="intSG">98.4% delivery rate</span></div></div>
+    <div class="integration-card"><div class="int-icon">💳</div><div class="int-name">Stripe</div><div class="badge badge-green" data-i18n="statusActive">● Active</div><div class="int-detail">Webhooks + REST<br>$284k <span data-i18n="intStripe">this month</span></div></div>
+    <div class="integration-card"><div class="int-icon">🏢</div><div class="int-name">ERPNext</div><div class="badge badge-green" data-i18n="statusActive">● Active</div><div class="int-detail">REST API v1<br>1,247 <span data-i18n="intERP">invoices</span></div></div>
+    <div class="integration-card"><div class="int-icon">🤖</div><div class="int-name">OpenAI GPT-4o</div><div class="badge badge-green" data-i18n="statusActive">● Active</div><div class="int-detail">v1/chat<br>4,280 <span data-i18n="intAI">recommendations</span></div></div>
+    <div class="integration-card"><div class="int-icon">📊</div><div class="int-name">BigQuery</div><div class="badge badge-green" data-i18n="statusActive">● Active</div><div class="int-detail">Streaming Insert<br><span data-i18n="intBQ">Updated every 30 min</span></div></div>
+    <div class="integration-card"><div class="int-icon">❄️</div><div class="int-name">Snowflake</div><div class="badge badge-green" data-i18n="statusActive">● Active</div><div class="int-detail">SQL Statement API<br>LOYALTY_DW</div></div>
+    <div class="integration-card"><div class="int-icon">📡</div><div class="int-name">Segment</div><div class="badge badge-green" data-i18n="statusActive">● Active</div><div class="int-detail">v1/track<br>12,847 <span data-i18n="intSeg">events/day</span></div></div>
+  </div>
+
+  <!-- AI PANEL -->
+  <div class="ai-panel">
+    <div class="ai-header">
+      <div class="ai-logo">🤖</div>
+      <div>
+        <div class="ai-title" data-i18n="aiTitle">Recommendations Engine — OpenAI GPT-4o</div>
+        <div class="ai-sub" data-i18n="aiSub">Last run: 2.4 hours ago • Next cycle in 3.6 hours</div>
+      </div>
+      <button class="btn btn-primary btn-sm" style="margin-inline-start:auto" onclick="runAI()" data-i18n="aiRun">▶ Run Now</button>
+    </div>
+    <div class="ai-recs">
+      <div class="ai-rec">
+        <div class="rec-customer" data-i18n="rec1Name">Ahmed Al-Sayed</div>
+        <div class="rec-tier-row"><div class="tier tier-gold">⭐ <span data-i18n="tierGold">Gold</span></div></div>
+        <div class="rec-product"><strong>👟 Adidas Ultraboost</strong><span data-i18n="rec1Short">Based on sports shoe history</span></div>
+        <div class="rec-discount">-20% <span data-i18n="discount">discount</span></div>
+        <div class="rec-reason" data-i18n="rec1Long">Bought 3 pairs of shoes in the last 60 days</div>
+      </div>
+      <div class="ai-rec">
+        <div class="rec-customer" data-i18n="rec2Name">Fatima Al-Mansouri</div>
+        <div class="rec-tier-row"><div class="tier tier-platinum">💎 <span data-i18n="tierPlatinum">Platinum</span></div></div>
+        <div class="rec-product"><strong>👜 Michael Kors Bag</strong><span data-i18n="rec2Short">Luxury fashion preferences</span></div>
+        <div class="rec-discount">-15% <span data-i18n="discount">discount</span></div>
+        <div class="rec-reason" data-i18n="rec2Long">Top 5% spender — $8,240 lifetime total</div>
+      </div>
+      <div class="ai-rec">
+        <div class="rec-customer" data-i18n="rec3Name">Khalid Al-Zahrani</div>
+        <div class="rec-tier-row"><div class="tier tier-silver">🥈 <span data-i18n="tierSilver">Silver</span></div></div>
+        <div class="rec-product"><strong>⌚ Apple Watch Series 9</strong><span data-i18n="rec3Short">Tech — most browsed category</span></div>
+        <div class="rec-discount">-12% <span data-i18n="discount">discount</span></div>
+        <div class="rec-reason" data-i18n="rec3Long">42 days without purchase — AI reactivation triggered</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOTTOM ROW -->
+  <div class="bottom-row">
+    <div class="table-card" style="margin-bottom:0">
+      <div class="table-head">
+        <div class="section-title" style="margin-bottom:0" data-i18n="leaderboard">🏆 Leaderboard</div>
+        <button class="btn btn-ghost btn-sm" data-i18n="viewAll">View All</button>
+      </div>
+      <div style="padding:1rem">
+        <div class="leaderboard">
+          <div class="lb-item"><div class="lb-rank">🥇</div><div class="lb-avatar">F</div><div style="flex:1;min-width:0"><div class="lb-name" data-i18n="lb1">Fatima Al-Mansouri</div><div style="font-size:.68rem;color:var(--text3)">48 <span data-i18n="refLabel">ref</span></div></div><div class="lb-pts">42,840 pts</div><div class="lb-bar-wrap"><div class="lb-bar" style="width:100%"></div></div></div>
+          <div class="lb-item"><div class="lb-rank">🥈</div><div class="lb-avatar">A</div><div style="flex:1;min-width:0"><div class="lb-name" data-i18n="lb2">Ahmed Al-Sharif</div><div style="font-size:.68rem;color:var(--text3)">31 <span data-i18n="refLabel">ref</span></div></div><div class="lb-pts">38,120 pts</div><div class="lb-bar-wrap"><div class="lb-bar" style="width:89%"></div></div></div>
+          <div class="lb-item"><div class="lb-rank">🥉</div><div class="lb-avatar">S</div><div style="flex:1;min-width:0"><div class="lb-name" data-i18n="lb3">Salma Al-Rashid</div><div style="font-size:.68rem;color:var(--text3)">27 <span data-i18n="refLabel">ref</span></div></div><div class="lb-pts">31,750 pts</div><div class="lb-bar-wrap"><div class="lb-bar" style="width:74%"></div></div></div>
+          <div class="lb-item"><div class="lb-rank other">#4</div><div class="lb-avatar">M</div><div style="flex:1;min-width:0"><div class="lb-name" data-i18n="lb4">Mohammed Al-Omari</div><div style="font-size:.68rem;color:var(--text3)">19 <span data-i18n="refLabel">ref</span></div></div><div class="lb-pts">24,300 pts</div><div class="lb-bar-wrap"><div class="lb-bar" style="width:57%"></div></div></div>
+          <div class="lb-item"><div class="lb-rank other">#5</div><div class="lb-avatar">N</div><div style="flex:1;min-width:0"><div class="lb-name" data-i18n="lb5">Noura Al-Kindi</div><div style="font-size:.68rem;color:var(--text3)">14 <span data-i18n="refLabel">ref</span></div></div><div class="lb-pts">18,900 pts</div><div class="lb-bar-wrap"><div class="lb-bar" style="width:44%"></div></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="table-card" style="margin-bottom:0">
+      <div class="table-head">
+        <div class="section-title" style="margin-bottom:0" data-i18n="liveActivity">⚡ Live Activity (Real-Time)</div>
+      </div>
+      <div style="padding:1rem"><div class="activity-feed" id="activityFeed">
+        <div class="activity-item"><div class="activity-dot" style="background:rgba(22,163,74,.2)">✅</div><div class="activity-body"><div class="activity-text"><strong data-i18n="act1T">New Customer</strong> — <span data-i18n="act1B">Webhook triggered. Ahmed | Bronze | +100 pts</span></div><div class="activity-time" data-i18n="t43s">43s ago</div></div></div>
+        <div class="activity-line"></div>
+        <div class="activity-item"><div class="activity-dot" style="background:rgba(201,162,39,.15)">⭐</div><div class="activity-body"><div class="activity-text"><strong data-i18n="act2T">Purchase $340</strong> — <span data-i18n="act2B">510 pts (1.5×). Fatima | Silver → Gold 🎉</span></div><div class="activity-time" data-i18n="t1m">1.2 min ago</div></div></div>
+        <div class="activity-line"></div>
+        <div class="activity-item"><div class="activity-dot" style="background:rgba(124,58,237,.2)">🤖</div><div class="activity-body"><div class="activity-text"><strong>AI Offer</strong> — <span data-i18n="act3B">GPT-4o sent to 23 inactive | WhatsApp + Email</span></div><div class="activity-time" data-i18n="t3m">3 min ago</div></div></div>
+        <div class="activity-line"></div>
+        <div class="activity-item"><div class="activity-dot" style="background:rgba(8,145,178,.2)">🔗</div><div class="activity-body"><div class="activity-text"><strong data-i18n="act4T">Successful Referral</strong> — <span data-i18n="act4B">REF-4A9X. +300 pts | +150 pts</span></div><div class="activity-time" data-i18n="t5m">5 min ago</div></div></div>
+        <div class="activity-line"></div>
+        <div class="activity-item"><div class="activity-dot" style="background:rgba(220,38,38,.15)">🏆</div><div class="activity-body"><div class="activity-text"><strong data-i18n="act5T">Badge Earned</strong> — <span data-i18n="act5B">Power Buyer 💪. Khalid | +750 pts</span></div><div class="activity-time" data-i18n="t7m">7 min ago</div></div></div>
+      </div></div>
+    </div>
+
+    <div class="table-card" style="margin-bottom:0">
+      <div class="table-head">
+        <div class="section-title" style="margin-bottom:0" data-i18n="quickMetrics">📊 Quick Metrics</div>
+      </div>
+      <div style="padding:1rem"><div class="mini-metrics">
+        <div class="mini-metric"><div class="mm-label" data-i18n="mm1">Points Redemption Rate</div><div class="mm-val">34.2%</div></div>
+        <div class="mini-metric"><div class="mm-label" data-i18n="mm2">Avg. Order Value</div><div class="mm-val">$147</div></div>
+        <div class="mini-metric"><div class="mm-label" data-i18n="mm3">Inactive Customers (30d)</div><div class="mm-val">423</div></div>
+        <div class="mini-metric"><div class="mm-label" data-i18n="mm4">Reactivation Success</div><div class="mm-val">28.4%</div></div>
+        <div class="mini-metric"><div class="mm-label" data-i18n="mm5">WhatsApp Today</div><div class="mm-val">847</div></div>
+        <div class="mini-metric"><div class="mm-label">Stripe MRR</div><div class="mm-val">$23,400</div></div>
+        <div class="mini-metric"><div class="mm-label" data-i18n="mm7">ERPNext Invoices</div><div class="mm-val">1,247</div></div>
+        <div class="mini-metric"><div class="mm-label" data-i18n="mm8">AI Cost / Customer</div><div class="mm-val">$0.008</div></div>
+      </div></div>
+    </div>
+  </div>
+
+  <!-- WORKFLOWS -->
+  <div class="section-title" data-i18n="secWorkflows">⚡ n8n Modules — 9 Active Workflows</div>
+  <div class="pipeline-grid">
+    <div class="pipeline-card">
+      <div class="pipeline-header"><div class="pipeline-icon" style="background:rgba(22,163,74,.15)">👤</div><div><div class="pipeline-title" data-i18n="wf1">1. New Customer Onboarding</div><div class="pipeline-sub">Webhook → ERPNext → WhatsApp → BigQuery</div></div><div class="badge badge-green" data-i18n="statusActive">● Active</div></div>
+      <div class="pipeline-steps"><div class="step-node">Webhook</div><div class="step-arrow">→</div><div class="step-node">Fetch Profile</div><div class="step-arrow">→</div><div class="step-node">ERPNext</div><div class="step-arrow">→</div><div class="step-node">Tier Assign</div><div class="step-arrow">→</div><div class="step-node">WhatsApp</div><div class="step-arrow">→</div><div class="step-node">BigQuery</div></div>
+      <div class="pipeline-stats"><div class="p-stat">Nodes: <span>8</span></div><div class="p-stat"><span data-i18n="todayL">Today:</span> <span>47</span> <span data-i18n="custL">customers</span></div><div class="p-stat">Latency: <span>&lt;2.1s</span></div></div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-header"><div class="pipeline-icon" style="background:rgba(201,162,39,.15)">🛒</div><div><div class="pipeline-title" data-i18n="wf2">2. Purchase & Points Automation</div><div class="pipeline-sub">Stripe Verify → Tier Multiplier → ERPNext Invoice</div></div><div class="badge badge-green" data-i18n="statusActive">● Active</div></div>
+      <div class="pipeline-steps"><div class="step-node">Webhook</div><div class="step-arrow">→</div><div class="step-node">Stripe Verify</div><div class="step-arrow">→</div><div class="step-node">Calc Points</div><div class="step-arrow">→</div><div class="step-node">Switch Tier</div><div class="step-arrow">→</div><div class="step-node">ERPNext</div><div class="step-arrow">→</div><div class="step-node">WhatsApp</div></div>
+      <div class="pipeline-stats"><div class="p-stat">Nodes: <span>9</span></div><div class="p-stat"><span data-i18n="todayL">Today:</span> <span>284</span> <span data-i18n="txL">transactions</span></div><div class="p-stat"><span data-i18n="totalL">Total:</span> <span>$47,820</span></div></div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-header"><div class="pipeline-icon" style="background:rgba(8,145,178,.15)">📧</div><div><div class="pipeline-title" data-i18n="wf3">3. Email Drip Campaigns</div><div class="pipeline-sub">Day 1 → Wait 24h → Day 3 → Wait 48h → Day 7</div></div><div class="badge badge-green" data-i18n="statusActive">● Active</div></div>
+      <div class="pipeline-steps"><div class="step-node">Webhook</div><div class="step-arrow">→</div><div class="step-node">Day 1 Email</div><div class="step-arrow">→</div><div class="step-node">Wait 24h</div><div class="step-arrow">→</div><div class="step-node">Day 3 Tips</div><div class="step-arrow">→</div><div class="step-node">Wait 48h</div><div class="step-arrow">→</div><div class="step-node">Day 7 Offer</div></div>
+      <div class="pipeline-stats"><div class="p-stat">Nodes: <span>9</span></div><div class="p-stat"><span data-i18n="activeL">Active:</span> <span>2,840</span> <span data-i18n="seqL">sequences</span></div><div class="p-stat">Open rate: <span>64.2%</span></div></div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-header"><div class="pipeline-icon" style="background:rgba(124,58,237,.15)">🤖</div><div><div class="pipeline-title" data-i18n="wf4">4. AI Recommendations Engine</div><div class="pipeline-sub">Cron /6h → Mixpanel + History → GPT-4o → WhatsApp</div></div><div class="badge badge-green" data-i18n="statusActive">● Active</div></div>
+      <div class="pipeline-steps"><div class="step-node">Cron/6h</div><div class="step-arrow">→</div><div class="step-node">Fetch History</div><div class="step-arrow">→</div><div class="step-node">AI Context</div><div class="step-arrow">→</div><div class="step-node">GPT-4o</div><div class="step-arrow">→</div><div class="step-node">Parse JSON</div><div class="step-arrow">→</div><div class="step-node">WhatsApp</div></div>
+      <div class="pipeline-stats"><div class="p-stat">Nodes: <span>9</span></div><div class="p-stat"><span data-i18n="cyclesL">Cycles today:</span> <span>4</span></div><div class="p-stat"><span data-i18n="convL">Conv.:</span> <span>18.7%</span></div></div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-header"><div class="pipeline-icon" style="background:rgba(201,162,39,.15)">🔗</div><div><div class="pipeline-title" data-i18n="wf5">5. Viral Referral System</div><div class="pipeline-sub">Webhook → Validate → Dual Rewards → Milestone</div></div><div class="badge badge-green" data-i18n="statusActive">● Active</div></div>
+      <div class="pipeline-steps"><div class="step-node">Webhook</div><div class="step-arrow">→</div><div class="step-node">Validate</div><div class="step-arrow">→</div><div class="step-node">+150 pts</div><div class="step-arrow">→</div><div class="step-node">+300 pts</div><div class="step-arrow">→</div><div class="step-node">Milestone?</div><div class="step-arrow">→</div><div class="step-node">ERPNext</div></div>
+      <div class="pipeline-stats"><div class="p-stat">Nodes: <span>9</span></div><div class="p-stat"><span data-i18n="monthL">Month:</span> <span>1,847</span></div><div class="p-stat"><span data-i18n="growthL">Growth:</span> <span>+41.2%</span></div></div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-header"><div class="pipeline-icon" style="background:rgba(201,162,39,.12)">🏆</div><div><div class="pipeline-title" data-i18n="wf6">6. Gamification Engine</div><div class="pipeline-sub">Cron /1h → 7 Badge Types → Multiplier → Leaderboard</div></div><div class="badge badge-green" data-i18n="statusActive">● Active</div></div>
+      <div class="pipeline-steps"><div class="step-node">Cron/1h</div><div class="step-arrow">→</div><div class="step-node">Fetch Activity</div><div class="step-arrow">→</div><div class="step-node">Calc Badges</div><div class="step-arrow">→</div><div class="step-node">Switch Type</div><div class="step-arrow">→</div><div class="step-node">Award</div><div class="step-arrow">→</div><div class="step-node">BigQuery</div></div>
+      <div class="pipeline-stats"><div class="p-stat">Nodes: <span>10</span></div><div class="p-stat"><span data-i18n="badgesL">Badges today:</span> <span>73</span></div><div class="p-stat"><span data-i18n="typesL">Types:</span> <span>7</span></div></div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-header"><div class="pipeline-icon" style="background:rgba(27,58,107,.3)">📊</div><div><div class="pipeline-title" data-i18n="wf7">7. Analytics + DW Sync</div><div class="pipeline-sub">Cron /30min → Stripe + ERPNext → BigQuery + Snowflake</div></div><div class="badge badge-green" data-i18n="statusActive">● Active</div></div>
+      <div class="pipeline-steps"><div class="step-node">Cron/30m</div><div class="step-arrow">→</div><div class="step-node">SaaS API</div><div class="step-arrow">→</div><div class="step-node">Stripe</div><div class="step-arrow">→</div><div class="step-node">Aggregate</div><div class="step-arrow">→</div><div class="step-node">BigQuery</div><div class="step-arrow">→</div><div class="step-node">Snowflake</div></div>
+      <div class="pipeline-stats"><div class="p-stat">Nodes: <span>10</span></div><div class="p-stat"><span data-i18n="updatesL">Updates:</span> <span>48</span></div><div class="p-stat"><span data-i18n="lagL">Lag:</span> <span>&lt;30min</span></div></div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-header"><div class="pipeline-icon" style="background:rgba(220,38,38,.15)">🔄</div><div><div class="pipeline-title" data-i18n="wf8">8. AI Reactivation Campaign</div><div class="pipeline-sub">Cron 9AM → Batch 50 → GPT-4o → WhatsApp / Email</div></div><div class="badge badge-green" data-i18n="statusActive">● Active</div></div>
+      <div class="pipeline-steps"><div class="step-node">Cron 9AM</div><div class="step-arrow">→</div><div class="step-node">Fetch 500</div><div class="step-arrow">→</div><div class="step-node">Batch 50</div><div class="step-arrow">→</div><div class="step-node">GPT-4o</div><div class="step-arrow">→</div><div class="step-node">Channel?</div><div class="step-arrow">→</div><div class="step-node">Send</div></div>
+      <div class="pipeline-stats"><div class="p-stat">Nodes: <span>10</span></div><div class="p-stat"><span data-i18n="todayL">Today:</span> <span>423</span> <span data-i18n="custL">customers</span></div><div class="p-stat"><span data-i18n="successL">Success:</span> <span>28.4%</span></div></div>
+    </div>
+    <div class="pipeline-card">
+      <div class="pipeline-header"><div class="pipeline-icon" style="background:rgba(99,102,241,.2)">💳</div><div><div class="pipeline-title" data-i18n="wf9">9. Stripe Auto-Billing</div><div class="pipeline-sub">Webhook → 4 Events → ERPNext + Loyalty + WhatsApp</div></div><div class="badge badge-green" data-i18n="statusActive">● Active</div></div>
+      <div class="pipeline-steps"><div class="step-node">Webhook</div><div class="step-arrow">→</div><div class="step-node">Event Router</div><div class="step-arrow">→</div><div class="step-node">Handler</div><div class="step-arrow">→</div><div class="step-node">ERPNext</div><div class="step-arrow">→</div><div class="step-node">+Points</div><div class="step-arrow">→</div><div class="step-node">Notify</div></div>
+      <div class="pipeline-stats"><div class="p-stat">Nodes: <span>10</span></div><div class="p-stat"><span data-i18n="eventsL">Events:</span> <span>184</span></div><div class="p-stat">MRR: <span>$23,400</span></div></div>
+    </div>
+  </div>
+
+  <!-- CUSTOMERS TABLE -->
+  <div class="section-title" data-i18n="recentCustomers">👥 Recent Customers</div>
+  <div class="table-card">
+    <div class="table-head">
+      <div style="font-size:.875rem;font-weight:600;color:var(--text)" data-i18n="customerRecords">Customer Records</div>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn btn-ghost btn-sm" data-i18n="btnFilter">Filter</button>
+        <button class="btn btn-primary btn-sm" onclick="showToast('👤',T('toastNewC'),T('toastNewCM'))" data-i18n="btnAddCustomer">+ New Customer</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th data-i18n="thCustomer">Customer</th><th data-i18n="thLevel">Level</th><th data-i18n="thPoints">Points</th>
+          <th data-i18n="thSpend">Total Spend</th><th data-i18n="thLast">Last Purchase</th>
+          <th data-i18n="thStatus">Status</th><th data-i18n="thAction">Action</th>
+        </tr></thead>
+        <tbody>
+          <tr><td>Ahmed Mohamed Al-Sayed<br><span style="font-size:.7rem;color:var(--text3)">ahmed@example.com</span></td><td><div class="tier tier-gold">⭐ <span data-i18n="tierGold">Gold</span></div></td><td><span style="font-family:'JetBrains Mono',monospace;color:var(--gold)">18,420</span></td><td>$3,840</td><td data-i18n="ago2d">2 days ago</td><td><div class="badge badge-green" data-i18n="statusActiveS">Active</div></td><td><button class="btn btn-ghost btn-sm" onclick="showToast('✅',T('toastOffer'),T('toastWAEmail')+' Ahmed')" data-i18n="btnAI">AI Offer</button></td></tr>
+          <tr><td>Fatima Al-Mansouri<br><span style="font-size:.7rem;color:var(--text3)">fatima@example.com</span></td><td><div class="tier tier-platinum">💎 <span data-i18n="tierPlatinum">Platinum</span></div></td><td><span style="font-family:'JetBrains Mono',monospace;color:var(--gold)">42,840</span></td><td>$8,240</td><td data-i18n="todayS">Today</td><td><div class="badge badge-green" data-i18n="statusActiveS">Active</div></td><td><button class="btn btn-ghost btn-sm" onclick="showToast('✅',T('toastOffer'),T('toastVIP')+' Fatima')" data-i18n="btnAI">AI Offer</button></td></tr>
+          <tr><td>Khalid Al-Zahrani<br><span style="font-size:.7rem;color:var(--text3)">khalid@example.com</span></td><td><div class="tier tier-silver">🥈 <span data-i18n="tierSilver">Silver</span></div></td><td><span style="font-family:'JetBrains Mono',monospace;color:var(--gold)">7,320</span></td><td>$1,240</td><td data-i18n="ago42d">42 days ago</td><td><div class="badge badge-yellow" data-i18n="statusInactive">Inactive</div></td><td><button class="btn btn-ghost btn-sm" onclick="showToast('🔄',T('toastReact'),T('toastReactM'))" data-i18n="btnReact">Reactivate</button></td></tr>
+          <tr><td>Salma Al-Rashid<br><span style="font-size:.7rem;color:var(--text3)">salma@example.com</span></td><td><div class="tier tier-platinum">💎 <span data-i18n="tierPlatinum">Platinum</span></div></td><td><span style="font-family:'JetBrains Mono',monospace;color:var(--gold)">31,750</span></td><td>$6,400</td><td data-i18n="ago1d">1 day ago</td><td><div class="badge badge-green" data-i18n="statusActiveS">Active</div></td><td><button class="btn btn-ghost btn-sm" onclick="showToast('✅',T('toastOffer'),T('toastVIP')+' Salma')" data-i18n="btnAI">AI Offer</button></td></tr>
+          <tr><td>Mohammed Al-Omari<br><span style="font-size:.7rem;color:var(--text3)">mohammed@example.com</span></td><td><div class="tier tier-bronze">🥉 <span data-i18n="tierBronze">Bronze</span></div></td><td><span style="font-family:'JetBrains Mono',monospace;color:var(--gold)">840</span></td><td>$180</td><td data-i18n="ago8d">8 days ago</td><td><div class="badge badge-green" data-i18n="statusActiveS">Active</div></td><td><button class="btn btn-ghost btn-sm" onclick="showToast('✅',T('toastOffer'),T('toastDrip')+' Mohammed')" data-i18n="btnAI">AI Offer</button></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+</div>
+
+<!-- TOAST -->
+<div class="toast" id="toast" style="display:none">
+  <div class="toast-icon" id="toastIcon">✅</div>
+  <div class="toast-text"><strong id="toastTitle"></strong><span id="toastMsg"></span></div>
+</div>
+
+<script>
+// ══════════════════════════════════════════
+// TRANSLATIONS
+// ══════════════════════════════════════════
+const TR = {
+en:{dir:'ltr',font:'system-ui,sans-serif',allSystems:'All Systems Operational',searchPh:'Quick search...',avatarLetter:'F',secMain:'MAIN',secAutomation:'AUTOMATION',secLoyalty:'LOYALTY PROGRAM',secSystem:'SYSTEM',navDashboard:'Dashboard',navCustomers:'Customers',navAnalytics:'Analytics',navWorkflows:'Workflows',navAI:'AI Engine',navCampaigns:'Campaigns',navPoints:'Points & Levels',navReferrals:'Referrals',navWarehouse:'Data Store',pageTitle:'👑 Main Dashboard',pageSubtitle:'Welcome Farouq — Last updated: 2 min ago • Tue March 12, 2026',btnExport:'⬇ Export',btnCampaign:'▶ Launch Campaign',statCustomers:'Total Customers',statCustomersD:'↑ 18.4% vs last month',statPoints:'Total Points Issued',statPointsD:'↑ 23.1% points earn rate',statRevenue:'Revenue (Last 30 Days)',statRevenueD:'↑ 34.7% from Stripe',statReferrals:'Successful Referrals',statReferralsD:'↑ 41.2% conversion rate',chartGrowthTitle:'📈 Monthly Growth — Customers & Revenue',chartGrowthMeta:'Last 12 months',chartTierTitle:'🥧 Tier Distribution',chartNewC:'New Customers',chartRev:'Revenue (×$100)',chartMonths:['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],secIntegrations:'🔌 Integration Status',statusActive:'● Active',statusActiveS:'Active',statusInactive:'Inactive',intWA:'847 messages today',intSG:'98.4% delivery rate',intStripe:'this month',intERP:'invoices',intAI:'recommendations',intBQ:'Updated every 30 min',intSeg:'events/day',aiTitle:'Recommendations Engine — OpenAI GPT-4o',aiSub:'Last run: 2.4 hours ago • Next cycle in 3.6 hours',aiRun:'▶ Run Now',tierGold:'Gold',tierSilver:'Silver',tierBronze:'Bronze',tierPlatinum:'Platinum',discount:'discount',rec1Name:'Ahmed Al-Sayed',rec2Name:'Fatima Al-Mansouri',rec3Name:'Khalid Al-Zahrani',rec1Short:'Based on sports shoe history',rec2Short:'Luxury fashion preferences',rec3Short:'Tech — most browsed category',rec1Long:'Bought 3 pairs of shoes in the last 60 days',rec2Long:'Top 5% spender — $8,240 lifetime total',rec3Long:'42 days without purchase — AI reactivation triggered',leaderboard:'🏆 Leaderboard',viewAll:'View All',lb1:'Fatima Al-Mansouri',lb2:'Ahmed Al-Sharif',lb3:'Salma Al-Rashid',lb4:'Mohammed Al-Omari',lb5:'Noura Al-Kindi',refLabel:'ref',liveActivity:'⚡ Live Activity (Real-Time)',act1T:'New Customer',act1B:'Webhook triggered. Ahmed | Bronze | +100 pts',act2T:'Purchase $340',act2B:'510 pts (1.5×). Fatima | Silver → Gold 🎉',act3B:'GPT-4o sent to 23 inactive | WhatsApp + Email',act4T:'Successful Referral',act4B:'REF-4A9X. Referrer +300 | Referred +150',act5T:'Badge Earned',act5B:'Power Buyer 💪. Khalid | +750 pts',t43s:'43s ago',t1m:'1.2 min ago',t3m:'3 min ago',t5m:'5 min ago',t7m:'7 min ago',tNow:'just now',quickMetrics:'📊 Quick Metrics',mm1:'Points Redemption Rate',mm2:'Avg. Order Value',mm3:'Inactive Customers (30d)',mm4:'Reactivation Success',mm5:'WhatsApp Today',mm7:'ERPNext Invoices',mm8:'AI Cost / Customer',secWorkflows:'⚡ n8n Modules — 9 Active Workflows',wf1:'1. New Customer Onboarding',wf2:'2. Purchase & Points Automation',wf3:'3. Email Drip Campaigns',wf4:'4. AI Recommendations Engine',wf5:'5. Viral Referral System',wf6:'6. Gamification Engine',wf7:'7. Analytics + DW Sync',wf8:'8. AI Reactivation Campaign',wf9:'9. Stripe Auto-Billing',todayL:'Today:',custL:'customers',txL:'transactions',totalL:'Total:',activeL:'Active:',seqL:'sequences',cyclesL:'Cycles today:',convL:'Conv.:',monthL:'Month:',growthL:'Growth:',badgesL:'Badges today:',typesL:'Types:',updatesL:'Updates:',lagL:'Lag:',successL:'Success:',eventsL:'Events:',recentCustomers:'👥 Recent Customers',customerRecords:'Customer Records',btnFilter:'Filter',btnAddCustomer:'+ New Customer',thCustomer:'Customer',thLevel:'Level',thPoints:'Points',thSpend:'Total Spend',thLast:'Last Purchase',thStatus:'Status',thAction:'Action',btnAI:'AI Offer',btnReact:'Reactivate',ago2d:'2 days ago',todayS:'Today',ago42d:'42 days ago',ago1d:'1 day ago',ago8d:'8 days ago',toastNewC:'New Customer Added',toastNewCM:'Onboarding Webhook triggered',toastOffer:'Custom Offer Sent!',toastWAEmail:'WhatsApp + Email →',toastVIP:'VIP WhatsApp →',toastDrip:'Email Drip →',toastReact:'Reactivating!',toastReactM:'AI offer sent to Khalid',toastAI:'GPT-4o Running',toastAIM:'Processing 20 customers... Offers in 30s',toastExp:'Exporting Data',toastExpM:'Exported 12,847 records to BigQuery + CSV',toastCamp:'Campaign Launched!',toastCampM:'423 WhatsApp messages scheduled',toastPage:'Loading Page',toastPageM:'will be available in full production'},
+
+ar:{dir:'rtl',font:"'Cairo',sans-serif",allSystems:'جميع الأنظمة تعمل',searchPh:'بحث سريع...',avatarLetter:'ف',secMain:'الرئيسية',secAutomation:'الأتمتة',secLoyalty:'برنامج الولاء',secSystem:'النظام',navDashboard:'لوحة التحكم',navCustomers:'العملاء',navAnalytics:'التحليلات',navWorkflows:'سير العمل',navAI:'محرّك الذكاء الاصطناعي',navCampaigns:'الحملات',navPoints:'النقاط والمستويات',navReferrals:'الإحالات',navWarehouse:'مستودع البيانات',pageTitle:'👑 لوحة التحكم الرئيسية',pageSubtitle:'مرحباً فاروق — آخر تحديث: منذ دقيقتين • الثلاثاء 12 مارس 2026',btnExport:'⬇ تصدير',btnCampaign:'▶ تشغيل حملة',statCustomers:'إجمالي العملاء',statCustomersD:'↑ 18.4% مقارنة بالشهر الماضي',statPoints:'إجمالي النقاط المُصدَرة',statPointsD:'↑ 23.1% معدل كسب النقاط',statRevenue:'إيرادات آخر 30 يوماً',statRevenueD:'↑ 34.7% من Stripe',statReferrals:'إحالات ناجحة هذا الشهر',statReferralsD:'↑ 41.2% نسبة التحويل',chartGrowthTitle:'📈 النمو الشهري — العملاء والإيرادات',chartGrowthMeta:'آخر 12 شهر',chartTierTitle:'🥧 توزيع المستويات',chartNewC:'عملاء جدد',chartRev:'إيرادات (×100$)',chartMonths:['أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر','يناير','فبراير','مارس'],secIntegrations:'🔌 حالة التكاملات',statusActive:'● نشط',statusActiveS:'نشط',statusInactive:'غير نشط',intWA:'847 رسالة اليوم',intSG:'98.4% معدل تسليم',intStripe:'هذا الشهر',intERP:'فاتورة',intAI:'توصية',intBQ:'تحديث كل 30 دقيقة',intSeg:'حدث/يوم',aiTitle:'محرّك التوصيات — OpenAI GPT-4o',aiSub:'آخر تشغيل: منذ 2.4 ساعة • الدورة القادمة خلال 3.6 ساعات',aiRun:'▶ تشغيل الآن',tierGold:'ذهبي',tierSilver:'فضي',tierBronze:'برونزي',tierPlatinum:'بلاتيني',discount:'خصم',rec1Name:'أحمد السيد',rec2Name:'فاطمة المنصوري',rec3Name:'خالد الزهراني',rec1Short:'بناءً على تاريخ شراء الأحذية',rec2Short:'مستوحى من تفضيلات الموضة الفاخرة',rec3Short:'تقنية — الفئة الأكثر تصفحاً',rec1Long:'اشترى 3 أزواج أحذية خلال آخر 60 يوماً',rec2Long:'أعلى 5% في الإنفاق — إجمالي $8,240',rec3Long:'42 يوماً بدون شراء — تدخل إعادة تنشيط AI',leaderboard:'🏆 قائمة الصدارة',viewAll:'عرض الكل',lb1:'فاطمة المنصوري',lb2:'أحمد الشريف',lb3:'سلمى الراشد',lb4:'محمد العمري',lb5:'نورة الكندي',refLabel:'إحالة',liveActivity:'⚡ آخر الأنشطة (Real-Time)',act1T:'عميل جديد',act1B:'تشغيل Onboarding Webhook. أحمد | برونزي | +100 نقطة',act2T:'شراء $340',act2B:'510 نقطة (مضاعف 1.5×). فاطمة | فضي → ذهبي 🎉',act3B:'توصية GPT-4o مُرسَلة. 23 عميل غير نشط',act4T:'إحالة ناجحة',act4B:'REF-4A9X. المُحيل +300 | المُحال +150 نقطة',act5T:'شارة مكتسبة',act5B:'Power Buyer 💪. خالد الزهراني | +750 نقطة',t43s:'منذ 43 ثانية',t1m:'منذ 1.2 دقيقة',t3m:'منذ 3 دقائق',t5m:'منذ 5 دقائق',t7m:'منذ 7 دقائق',tNow:'الآن',quickMetrics:'📊 مقاييس سريعة',mm1:'معدل استرداد النقاط',mm2:'متوسط قيمة الطلب',mm3:'عملاء غير نشطين (30d)',mm4:'نجاح إعادة التنشيط',mm5:'رسائل WhatsApp اليوم',mm7:'فواتير ERPNext',mm8:'تكلفة AI لكل عميل',secWorkflows:'⚡ موديولات n8n — 9 Workflows نشطة',wf1:'1. تأهيل العملاء الجدد',wf2:'2. أتمتة الشراء والنقاط',wf3:'3. حملات البريد التقطيري',wf4:'4. محرّك التوصيات AI',wf5:'5. الإحالة الفيروسية',wf6:'6. محرّك Gamification',wf7:'7. مزامنة التحليلات + DW',wf8:'8. حملة إعادة التنشيط AI',wf9:'9. فوترة Stripe التلقائية',todayL:'اليوم:',custL:'عميل',txL:'معاملة',totalL:'المجموع:',activeL:'نشط:',seqL:'تسلسل',cyclesL:'دورات اليوم:',convL:'تحويل:',monthL:'الشهر:',growthL:'نمو:',badgesL:'شارات اليوم:',typesL:'أنواع:',updatesL:'تحديثات:',lagL:'تأخر:',successL:'نجاح:',eventsL:'أحداث:',recentCustomers:'👥 أحدث العملاء',customerRecords:'سجلات العملاء',btnFilter:'تصفية',btnAddCustomer:'+ عميل جديد',thCustomer:'العميل',thLevel:'المستوى',thPoints:'النقاط',thSpend:'الإنفاق الكلي',thLast:'آخر شراء',thStatus:'الحالة',thAction:'الإجراء',btnAI:'عرض AI',btnReact:'إعادة تنشيط',ago2d:'منذ يومين',todayS:'اليوم',ago42d:'منذ 42 يوماً',ago1d:'منذ يوم',ago8d:'منذ 8 أيام',toastNewC:'إضافة عميل جديد',toastNewCM:'تم تشغيل Onboarding Webhook',toastOffer:'تم إرسال عرض مخصص!',toastWAEmail:'WhatsApp + Email ←',toastVIP:'VIP WhatsApp ←',toastDrip:'Email Drip ←',toastReact:'إعادة تنشيط!',toastReactM:'AI offer مُرسَل لخالد',toastAI:'GPT-4o تشغيل',toastAIM:'جاري معالجة 20 عميل...',toastExp:'تصدير البيانات',toastExpM:'تم تصدير 12,847 سجل إلى BigQuery + CSV',toastCamp:'تم تشغيل حملة إعادة التنشيط!',toastCampM:'تم جدولة 423 رسالة WhatsApp',toastPage:'تحميل الصفحة',toastPageM:'ستتوفر في نسخة الإنتاج الكاملة'},
+
+sv:{dir:'ltr',font:'system-ui,sans-serif',allSystems:'Alla system är operativa',searchPh:'Snabbsökning...',avatarLetter:'F',secMain:'HUVUDMENY',secAutomation:'AUTOMATION',secLoyalty:'LOJALITETSPROGRAM',secSystem:'SYSTEM',navDashboard:'Översikt',navCustomers:'Kunder',navAnalytics:'Analys',navWorkflows:'Arbetsflöden',navAI:'AI-motor',navCampaigns:'Kampanjer',navPoints:'Poäng & Nivåer',navReferrals:'Remisser',navWarehouse:'Datalager',pageTitle:'👑 Huvudöversikt',pageSubtitle:'Välkommen Farouq — Senast uppdaterad: 2 min sedan • Tis 12 mars 2026',btnExport:'⬇ Exportera',btnCampaign:'▶ Starta kampanj',statCustomers:'Totalt antal kunder',statCustomersD:'↑ 18,4% jämfört med förra månaden',statPoints:'Totalt utfärdade poäng',statPointsD:'↑ 23,1% poängintjäningstakt',statRevenue:'Intäkter (senaste 30 dagarna)',statRevenueD:'↑ 34,7% från Stripe',statReferrals:'Lyckade remisser denna månad',statReferralsD:'↑ 41,2% konverteringsgrad',chartGrowthTitle:'📈 Månadsvis tillväxt — Kunder & Intäkter',chartGrowthMeta:'Senaste 12 månaderna',chartTierTitle:'🥧 Nivåfördelning',chartNewC:'Nya kunder',chartRev:'Intäkter (×100 kr)',chartMonths:['Apr','Maj','Jun','Jul','Aug','Sep','Okt','Nov','Dec','Jan','Feb','Mar'],secIntegrations:'🔌 Integrationsstatus',statusActive:'● Aktiv',statusActiveS:'Aktiv',statusInactive:'Inaktiv',intWA:'847 meddelanden idag',intSG:'98,4% leveransgrad',intStripe:'denna månad',intERP:'fakturor',intAI:'rekommendationer',intBQ:'Uppdateras var 30:e min',intSeg:'händelser/dag',aiTitle:'Rekommendationsmotor — OpenAI GPT-4o',aiSub:'Senaste körning: 2,4 timmar sedan • Nästa cykel om 3,6 timmar',aiRun:'▶ Kör nu',tierGold:'Guld',tierSilver:'Silver',tierBronze:'Brons',tierPlatinum:'Platina',discount:'rabatt',rec1Name:'Ahmed Al-Sayed',rec2Name:'Fatima Al-Mansouri',rec3Name:'Khalid Al-Zahrani',rec1Short:'Baserat på köphistorik sportskor',rec2Short:'Lyxmode-preferenser',rec3Short:'Teknik — mest bläddrad kategori',rec1Long:'Köpte 3 par skor de senaste 60 dagarna',rec2Long:'Topp 5% spenderare — $8 240 totalt',rec3Long:'42 dagar utan köp — AI-återaktivering utlöst',leaderboard:'🏆 Topplista',viewAll:'Visa alla',lb1:'Fatima Al-Mansouri',lb2:'Ahmed Al-Sharif',lb3:'Salma Al-Rashid',lb4:'Mohammed Al-Omari',lb5:'Noura Al-Kindi',refLabel:'rem.',liveActivity:'⚡ Senaste aktiviteter (Realtid)',act1T:'Ny kund',act1B:'Webhook aktiverad. Ahmed | Brons | +100 pts',act2T:'Köp $340',act2B:'510 pts (1,5×). Fatima | Silver → Guld 🎉',act3B:'GPT-4o skickat till 23 inaktiva | WhatsApp',act4T:'Lyckad remiss',act4B:'REF-4A9X. +300 pts | +150 pts',act5T:'Märke erhållet',act5B:'Power Buyer 💪. Khalid | +750 pts',t43s:'43s sedan',t1m:'1,2 min sedan',t3m:'3 min sedan',t5m:'5 min sedan',t7m:'7 min sedan',tNow:'just nu',quickMetrics:'📊 Snabbmätvärden',mm1:'Poänginlösengrad',mm2:'Genomsn. ordervärde',mm3:'Inaktiva kunder (30d)',mm4:'Återaktiveringsframgång',mm5:'WhatsApp idag',mm7:'ERPNext-fakturor',mm8:'AI-kostnad/kund',secWorkflows:'⚡ n8n-moduler — 9 aktiva arbetsflöden',wf1:'1. Ny kund onboarding',wf2:'2. Köp & poängautomation',wf3:'3. E-postkampanjer',wf4:'4. AI-rekommendationsmotor',wf5:'5. Viralt remisssystem',wf6:'6. Gamification-motor',wf7:'7. Analys + DW-synk',wf8:'8. AI-återaktiveringskampanj',wf9:'9. Stripe auto-fakturering',todayL:'Idag:',custL:'kunder',txL:'transaktioner',totalL:'Totalt:',activeL:'Aktiva:',seqL:'sekvenser',cyclesL:'Cykler idag:',convL:'Konv.:',monthL:'Månaden:',growthL:'Tillväxt:',badgesL:'Märken idag:',typesL:'Typer:',updatesL:'Uppdateringar:',lagL:'Fördröjn.:',successL:'Framgång:',eventsL:'Händelser:',recentCustomers:'👥 Senaste kunder',customerRecords:'Kundposter',btnFilter:'Filtrera',btnAddCustomer:'+ Ny kund',thCustomer:'Kund',thLevel:'Nivå',thPoints:'Poäng',thSpend:'Total utgift',thLast:'Senaste köp',thStatus:'Status',thAction:'Åtgärd',btnAI:'AI-erbjudande',btnReact:'Återaktivera',ago2d:'för 2 dagar sedan',todayS:'Idag',ago42d:'för 42 dagar sedan',ago1d:'för 1 dag sedan',ago8d:'för 8 dagar sedan',toastNewC:'Ny kund tillagd',toastNewCM:'Onboarding Webhook aktiverad',toastOffer:'Erbjudande skickat!',toastWAEmail:'WhatsApp + E-post →',toastVIP:'VIP WhatsApp →',toastDrip:'E-postkampanj →',toastReact:'Återaktiverar!',toastReactM:'AI-erbjudande skickat till Khalid',toastAI:'GPT-4o körs',toastAIM:'Bearbetar 20 kunder...',toastExp:'Exporterar data',toastExpM:'Exporterade 12 847 poster till BigQuery + CSV',toastCamp:'Kampanj startad!',toastCampM:'423 meddelanden schemalagda',toastPage:'Laddar sida',toastPageM:'blir tillgänglig i fullständig produktion'}
+};
+
+let lang = 'en';
+function T(k){ return (TR[lang][k] !== undefined ? TR[lang][k] : TR['en'][k]) || k; }
+
+function setLang(l){
+  lang = l;
+  const t = TR[l];
+  // Direction + font
+  document.documentElement.setAttribute('lang', l);
+  document.documentElement.setAttribute('dir', t.dir);
+  document.body.style.fontFamily = t.font;
+  // Lang buttons
+  document.querySelectorAll('.lang-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase()===l));
+  // All data-i18n
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const v = t[el.getAttribute('data-i18n')];
+    if(v !== undefined) el.textContent = v;
+  });
+  // Placeholder
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const v = t[el.getAttribute('data-i18n-ph')];
+    if(v !== undefined) el.placeholder = v;
+  });
+  // Update chart
+  if(gChart){
+    gChart.data.labels = t.chartMonths;
+    gChart.data.datasets[0].label = t.chartNewC;
+    gChart.data.datasets[1].label = t.chartRev;
+    gChart.update('none');
+  }
+}
+
+// ══════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════
+const GOLD='#C9A227', BLUE='#2A5298';
+let gChart, tChart;
+
+gChart = new Chart(document.getElementById('growthChart'), {
+  type:'line',
+  data:{
+    labels:['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'],
+    datasets:[
+      {label:'New Customers',data:[620,810,940,1100,1350,1480,1720,1980,2240,2580,2840,3120],
+       borderColor:BLUE,backgroundColor:'rgba(42,82,152,.1)',fill:true,tension:.4,pointBackgroundColor:BLUE,pointRadius:3,pointHoverRadius:5},
+      {label:'Revenue (×$100)',data:[84,112,148,184,220,262,310,368,427,510,580,680],
+       borderColor:GOLD,backgroundColor:'rgba(201,162,39,.08)',fill:true,tension:.4,pointBackgroundColor:GOLD,pointRadius:3,pointHoverRadius:5},
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{labels:{color:'#8fa3c8',boxWidth:12,font:{size:11}}}},
+    scales:{
+      x:{grid:{color:'rgba(42,82,152,.15)'},ticks:{color:'#4d6a9a',maxRotation:0,font:{size:10}}},
+      y:{grid:{color:'rgba(42,82,152,.15)'},ticks:{color:'#4d6a9a',font:{size:10}}}
+    }
+  }
+});
+
+tChart = new Chart(document.getElementById('tierChart'), {
+  type:'doughnut',
+  data:{
+    labels:['Bronze','Silver','Gold','Platinum'],
+    datasets:[{data:[62,23,11,4],
+      backgroundColor:['rgba(180,83,9,.7)','rgba(100,116,139,.7)','rgba(201,162,39,.7)','rgba(124,58,237,.7)'],
+      borderColor:['#92400e','#475569','#7a6118','#4c1d95'],borderWidth:2}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false}},cutout:'70%'}
+});
+
+// ══════════════════════════════════════════
+// COUNTERS
+// ══════════════════════════════════════════
+document.querySelectorAll('.counter').forEach(el=>{
+  const tgt=parseInt(el.dataset.target), fmt=el.dataset.format;
+  let cur=0; const step=tgt/80;
+  const tm=setInterval(()=>{
+    cur=Math.min(cur+step,tgt);
+    el.textContent = fmt==='M' ? (cur/1e6).toFixed(2)+'M' : Math.floor(cur).toLocaleString();
+    if(cur>=tgt) clearInterval(tm);
+  },20);
+});
+
+// ══════════════════════════════════════════
+// NAV + ACTIONS
+// ══════════════════════════════════════════
+function showPage(p,el){
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  el&&el.classList.add('active');
+  showToast('📂',T('toastPage'),`"${p}" ${T('toastPageM')}`);
+}
+function runAI(){ showToast('🤖',T('toastAI'),T('toastAIM')); }
+function exportData(){ showToast('⬇',T('toastExp'),T('toastExpM')); }
+function launchCampaign(){ showToast('🚀',T('toastCamp'),T('toastCampM')); }
+
+// ══════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════
+let toastTm;
+function showToast(icon,title,msg){
+  document.getElementById('toastIcon').textContent=icon;
+  document.getElementById('toastTitle').textContent=title;
+  document.getElementById('toastMsg').textContent=' — '+msg;
+  const t=document.getElementById('toast');
+  t.style.display='flex'; t.style.animation='none';
+  requestAnimationFrame(()=>{t.style.animation='';});
+  clearTimeout(toastTm); toastTm=setTimeout(()=>t.style.display='none',4000);
+}
+
+// ══════════════════════════════════════════
+// LIVE FEED
+// ══════════════════════════════════════════
+const ACTS=[['✅','rgba(22,163,74,.2)','act1T','act1B'],['⭐','rgba(201,162,39,.15)','act2T','act2B'],['🔗','rgba(8,145,178,.2)','act4T','act4B'],['💳','rgba(99,102,241,.2)','aiRun','act3B'],['🏆','rgba(201,162,39,.12)','act5T','act5B'],['🤖','rgba(124,58,237,.2)','aiRun','act3B']];
+let aIdx=0;
+setInterval(()=>{
+  const feed=document.getElementById('activityFeed'); if(!feed) return;
+  const a=ACTS[aIdx++%ACTS.length];
+  const item=document.createElement('div'); item.className='activity-item';
+  item.innerHTML=`<div class="activity-dot" style="background:${a[1]}">${a[0]}</div><div class="activity-body"><div class="activity-text"><strong>${T(a[2])}</strong> — ${T(a[3])}</div><div class="activity-time">${T('tNow')}</div></div>`;
+  const line=document.createElement('div'); line.className='activity-line';
+  feed.insertBefore(line,feed.firstChild);
+  feed.insertBefore(item,feed.firstChild);
+  const items=feed.querySelectorAll('.activity-item');
+  if(items.length>5){ feed.querySelectorAll('.activity-line')[feed.querySelectorAll('.activity-line').length-1]?.remove(); items[items.length-1]?.remove(); }
+},5000);
+
+// Init
+setLang('en');
+</script>
+</body>
+</html>
